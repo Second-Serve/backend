@@ -1,24 +1,31 @@
+from enum import Enum
+
 from .pickup_hours import WeeklyPickupHours
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel
 
 
-class UserInfo(BaseModel):
+class AccountType(str, Enum):
+    CUSTOMER = "customer"
+    BUSINESS = "business"    
+
+
+class PublicUserInfo(BaseModel):
+    account_type: AccountType
     email: str
-    password: SecretStr
+    is_admin: bool = False
+    first_name: str | None = None
+    last_name: str | None = None
+    business_name: str | None = None
+    business_address: str | None = None
+    business_pickup_hours: WeeklyPickupHours | None = None
 
 
-class User(UserInfo):
-    id: int 
+class UserRegistrationInfo(PublicUserInfo):
+    password: str
 
 
-class CustomerUser(User):
-    campus_id: str | None
-    first_name: str
-    last_name: str
-
-
-class BusinessUser(User):
-    business_name: str
-    business_address: str
-    business_pickup_hours: WeeklyPickupHours
+# User accounts have an ID and a bearer token, but those are not part of the registration info
+class User(UserRegistrationInfo):
+    id: str
+    bearer: str
