@@ -1,5 +1,6 @@
 import json
 import uuid
+import os.path
 
 import secrets
 
@@ -13,15 +14,15 @@ accounts = {}
 
 def initialize():
     global accounts
-    with open("accounts.json", "r") as f:
-        if f.readable():
+    if os.path.isfile("accounts.json"):
+        with open("accounts.json", "r") as f:
             accounts = json.load(f)
-        else:
-            accounts = {}
+    else:
+        accounts = {}
 
 
 def save_accounts():
-    with open("accounts.json", "w") as f:
+    with open("accounts.json", "w+") as f:
         f.write(json.dumps(accounts))
 
 
