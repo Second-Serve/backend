@@ -1,6 +1,7 @@
 import json
 import uuid
 import os.path
+from models.Restaurant import Restaurant
 
 import secrets
 
@@ -107,3 +108,54 @@ def verify_bearer(bearer: str) -> User:
         if account["bearer"] == bearer:
             return User(**account)
     raise ValueError("Invalid bearer token")
+
+restaurants = {}
+
+def initialize_restaurants():
+    global restaurants
+    if os.path.isfile("restaurants.json"):
+        with open("restaurants.json", "r") as f:
+            restaurants = json.load(f)
+    else:
+        restaurants = {
+            str(uuid.uuid4()): {
+                "id": str(uuid.uuid4()),
+                "name": "First Restaurant",
+                "address": "123 Food St, Madison",
+                "pickup_hours": "11:00 AM - 10:00 PM",
+                "menu_items": ["Burger", "Fries", "Shake"]
+            },
+            str(uuid.uuid4()): {
+                "id": str(uuid.uuid4()),
+                "name": "Second Restaurant",
+                "address": "456 Food Ave, Madison",
+                "pickup_hours": "10:00 AM - 11:00 PM",
+                "menu_items": ["Pizza1", "Pizza2"]
+            },
+        }
+        save_restaurants()
+
+def save_restaurants():
+    with open("restaurants.json", "w") as f:
+        json.dump(restaurants, f)
+
+def get_all_restaurants():
+    return [Restaurant(**data) for data in restaurants.values()]
+
+def get_restaurant_by_id(restaurant_id: str):
+    if restaurant_id in restaurants:
+        return Restaurant(**restaurants[restaurant_id])
+    raise ValueError("No restaurant with that id")
+
+def add_restaurant(restaurant_data: dict):
+    restaurant_id = str(uuid.uuid4())
+    restaurants[restaurant_id] = {**restaurant_data, "id": restaurant_id}
+    save_restaurants()
+    return Restaurant(**restaurants[restaurant_id])
+
+def delete_restaurant(restaurant_id: str):
+    if restaurant_id in restaurants:
+        del restaurants[restaurant_id]
+        save_restaurants()
+    else:
+        raise ValueError("No restaurant with that id")
