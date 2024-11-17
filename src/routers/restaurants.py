@@ -10,7 +10,7 @@ from util.api import APIResponseClass
 router = APIRouter(
     prefix="/restaurants",
     tags=["restaurants"],
-    responses={404: {"description": "Not found"}}
+    responses={404: {"description": "Not found"}},
 )
 
 
