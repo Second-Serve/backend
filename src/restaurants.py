@@ -1,12 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from models.Restaurant import Restaurant
-import db
+from db import Database
+
 
 router = APIRouter(
     prefix="/restaurants",
     tags=["restaurants"],
-    responses={404: {"description": "Not found"}}
+    responses={404: {"description": "Not found"}},
 )
+
+db = Database()
 
 @router.get("/")
 async def list_restaurants():
