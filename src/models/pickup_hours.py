@@ -14,7 +14,6 @@ class Weekday(IntEnum):
 
 
 class DailyPickupHours(BaseModel):
-    weekday: Weekday
     start_time: str
     end_time: str
 

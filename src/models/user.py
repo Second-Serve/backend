@@ -1,6 +1,6 @@
 from enum import Enum
 
-from .pickup_hours import WeeklyPickupHours
+from .restaurant import Restaurant, RestaurantRegistrationInfo
 
 from pydantic import BaseModel
 
@@ -10,22 +10,22 @@ class AccountType(str, Enum):
     BUSINESS = "business"    
 
 
-class PublicUserInfo(BaseModel):
+class UserRegistrationInfo(BaseModel):
     account_type: AccountType
     email: str
-    is_admin: bool = False
-    first_name: str | None = None
-    last_name: str | None = None
-    business_name: str | None = None
-    business_address: str | None = None
-    business_pickup_hours: WeeklyPickupHours | None = None
-
-
-class UserRegistrationInfo(PublicUserInfo):
     password: str
+    first_name: str
+    last_name: str
+    restaurant: RestaurantRegistrationInfo | None = None
 
 
-# User accounts have an ID and a bearer token, but those are not part of the registration info
-class User(UserRegistrationInfo):
+class User(BaseModel):
     id: str
+    account_type: AccountType
+    email: str
     bearer: str
+    is_admin: bool = False
+    first_name: str
+    last_name: str
+    campus_id: int | None = None
+    restaurant: Restaurant | None = None
