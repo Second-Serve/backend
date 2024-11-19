@@ -93,6 +93,6 @@ async def update_user_by_id(id: str, new_user_info: UserRegistrationInfo, token:
 @router.post("/login", response_class=APIResponseClass)
 async def login(info: UserLoginInfo) -> User:
     user = db.get_user_by_email(info.email)
-    if user.password != info.password:
-        raise ValueError("Invalid password")
+    if not user or (user.password != info.password):
+        raise ValueError("Invalid email or password")
     return user

@@ -58,7 +58,7 @@ def get_user_by_email(email: str) -> User:
     for account in accounts.values():
         if account["email"] == email:
             return User(**account)
-    raise ValueError("No account with that email")
+    return None
 
 
 def create_account(user_info: UserRegistrationInfo) -> User:
