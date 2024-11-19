@@ -19,10 +19,16 @@ class UserRegistrationInfo(BaseModel):
     restaurant: RestaurantRegistrationInfo | None = None
 
 
+class UserLoginInfo(BaseModel):
+    email: str
+    password: str
+
+
 class User(BaseModel):
     id: str
     account_type: AccountType
     email: str
+    password: str
     bearer: str
     is_admin: bool = False
     first_name: str

@@ -4,9 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer
-from fastapi.responses import JSONResponse
 
-from models.user import User, UserRegistrationInfo
+from models.user import User, UserLoginInfo, UserRegistrationInfo
 from models.response import APIResponse
 
 from util.api import APIResponseClass
@@ -69,3 +68,31 @@ async def get_user_by_id(id: str, token: Annotated[str, Depends(oauth2_scheme)])
 @router.post("/", response_class=APIResponseClass)
 async def create_account(user_info: UserRegistrationInfo) -> User:
     return db.create_account(user_info)
+
+
+@router.put("/me", response_class=APIResponseClass)
+async def update_account(new_user_info: UserRegistrationInfo, token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+    user = db.verify_bearer(token)
+
+    if new_user_info.account_type != user.account_type:
+        raise ValueError("Cannot change account type")
+
+    return db.update_account(user.id, new_user_info)
+
+
+@router.put("/{id}", response_class=APIResponseClass)
+async def update_user_by_id(id: str, new_user_info: UserRegistrationInfo, token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+    if _bearer_is_admin(token):
+        if new_user_info.account_type != new_user_info.account_type:
+            raise ValueError("Cannot change account type")
+        return db.update_account(id, new_user_info)
+    else:
+        raise ValueError("User is not an admin")
+
+
+@router.post("/login", response_class=APIResponseClass)
+async def login(info: UserLoginInfo) -> User:
+    user = db.get_user_by_email(info.email)
+    if user.password != info.password:
+        raise ValueError("Invalid password")
+    return user
