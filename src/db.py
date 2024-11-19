@@ -87,6 +87,19 @@ def create_account(user_info: UserRegistrationInfo) -> User:
     return user
 
 
+def update_account(id: str, user_info: UserRegistrationInfo) -> User:
+    if id in accounts:
+        account = User(**accounts[id])
+        account.email = user_info.email
+        account.password = user_info.password
+        account.first_name = user_info.first_name
+        account.last_name = user_info.last_name
+        save_accounts()
+        return account
+    else:
+        raise ValueError("No account with that id")
+
+
 def delete_account(id: str):
     if id in accounts:
         del accounts[id]
@@ -136,6 +149,18 @@ def delete_restaurant(restaurant_id: str):
     for user in users:
         if user.account_type == AccountType.BUSINESS and user.restaurant.id == restaurant_id:
             user.restaurant = None
+            save_accounts()
+            return
+    raise ValueError("No restaurant with that id")
+
+
+def update_restaurant(restaurant_id: str, restaurant_info: RestaurantRegistrationInfo):
+    users = get_all_users()
+    for user in users:
+        if user.account_type == AccountType.BUSINESS and user.restaurant.id == restaurant_id:
+            user.restaurant.name = restaurant_info.name
+            user.restaurant.address = restaurant_info.address
+            user.restaurant.pickup_hours = restaurant_info.pickup_hours
             save_accounts()
             return
     raise ValueError("No restaurant with that id")

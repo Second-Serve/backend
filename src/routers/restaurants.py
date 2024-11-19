@@ -1,8 +1,11 @@
+from typing import Annotated
+
+from fastapi.security import OAuth2PasswordBearer
 import db
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
-from models.restaurant import Restaurant
+from models.restaurant import Restaurant, RestaurantRegistrationInfo
 
 from util.api import APIResponseClass
 
@@ -12,6 +15,7 @@ router = APIRouter(
     tags=["restaurants"],
     responses={404: {"description": "Not found"}},
 )
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @router.get("/", response_class=APIResponseClass)
@@ -40,3 +44,19 @@ async def delete_restaurant(restaurant_id: str):
         db.delete_restaurant(restaurant_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put("/{restaurant_id}", response_class=APIResponseClass)
+async def update_restaurant(restaurant_id: str, restaurant: RestaurantRegistrationInfo, token: Annotated[str, Depends(oauth2_scheme)]):
+    try:
+        updated_restaurant = db.update_restaurant(restaurant_id, restaurant)
+        return updated_restaurant.dict()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put("/me", response_class=APIResponseClass)
+async def update_my_restaurant(restaurant: RestaurantRegistrationInfo, token: Annotated[str, Depends(oauth2_scheme)]):
+    user = db.verify_bearer(token)
+    updated_restaurant = db.update_restaurant(user.restaurant.id, restaurant)
+    return updated_restaurant.dict()
