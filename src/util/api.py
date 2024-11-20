@@ -1,6 +1,19 @@
 import json
+
+import db
+
+from fastapi import Depends
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer
 from models.response import APIResponse
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def bearer_is_admin(token: str = Depends(oauth2_scheme)) -> bool:
+    user = db.verify_bearer(token)
+    return user.is_admin
 
 
 class APIResponseClass(JSONResponse):

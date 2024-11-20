@@ -26,7 +26,7 @@ def initialize():
 
 def save_accounts():
     with open("accounts.json", "w+") as f:
-        f.write(json.dumps(accounts))
+        f.write(json.dumps(accounts, indent=4))
 
 
 def _generate_uuid():
