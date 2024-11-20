@@ -1,32 +1,54 @@
 import json
 import os
 import uuid
-import os.path
+import secrets
+from pathlib import Path
+
+from fastapi import UploadFile
 
 from models.restaurant import Restaurant, RestaurantRegistrationInfo
 from models.user import User, UserRegistrationInfo, AccountType
 
-import secrets
 
-
+ACCOUNTS_JSON_PATH = "db/accounts.json"
+BANNERS_PATH = "db/images/banners/"
 BEARER_TOKEN_LENGTH = 128
 
 
 accounts = {}
 
 
+def _create_directory_if_not_exists(path_string: str) -> Path:
+    path = Path(path_string)
+
+    if path.is_file():
+        path = path.parent
+    
+    path.mkdir(parents=True, exist_ok=True)
+
+    return path
+
+
 def initialize():
     global accounts
+
+    # Migrate from old database location
     if os.path.isfile("accounts.json"):
-        with open("accounts.json", "r") as f:
+        _create_directory_if_not_exists("db/")
+        os.rename("accounts.json", ACCOUNTS_JSON_PATH)
+
+    if os.path.isfile(ACCOUNTS_JSON_PATH):
+        with open(ACCOUNTS_JSON_PATH, "r") as f:
             accounts = json.load(f)
     else:
         accounts = {}
 
 
 def save_accounts():
-    with open("accounts.json", "w+") as f:
-        f.write(json.dumps(accounts, indent=4))
+    accounts_path = _create_directory_if_not_exists(ACCOUNTS_JSON_PATH)
+
+    with open(accounts_path, "w+") as f:
+        f.write(json.dumps(accounts, indent=4))    
 
 
 def _generate_uuid():
@@ -164,3 +186,18 @@ def update_restaurant(restaurant_id: str, restaurant_info: RestaurantRegistratio
             save_accounts()
             return
     raise ValueError("No restaurant with that id")
+
+
+def get_restaurant_banner(restaurant_id: str) -> bytes | None:
+    banner_path = f"{BANNERS_PATH}/{restaurant_id}.png"
+    if os.path.isfile(banner_path):
+        image_bytes = open(banner_path, "rb").read()
+        return image_bytes
+    return None
+
+
+def update_restaurant_banner(restaurant_id: str, banner: UploadFile):
+    banner_path = _create_directory_if_not_exists(f"{BANNERS_PATH}/{restaurant_id}.png")
+
+    with open(banner_path, "wb+") as f:
+        f.write(banner)

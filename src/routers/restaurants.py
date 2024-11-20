@@ -1,9 +1,7 @@
+import db
 from typing import Annotated
 
-from fastapi.security import OAuth2PasswordBearer
-import db
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
 from models.restaurant import Restaurant, RestaurantRegistrationInfo
 
@@ -18,21 +16,21 @@ router = APIRouter(
 
 
 @router.get("/", response_class=APIResponseClass)
-async def list_restaurants():
-    if db.verify_bearer() is None:
+async def list_restaurants(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
+    if db.verify_bearer(token) is None:
         raise HTTPException(status_code=400, detail="Invalid token")
 
     return {"restaurants": [restaurant.dict() for restaurant in db.get_all_restaurants()]}
 
 
 @router.get("/{restaurant_id}", response_class=APIResponseClass)
-async def get_restaurant(restaurant_id: str, token: Annotated[str, Depends(oauth2_scheme)]):
-    if db.verify_bearer() is None:
+async def get_restaurant(restaurant_id: str, token: Annotated[str, Depends(oauth2_scheme)]) -> Restaurant:
+    if db.verify_bearer(token) is None:
         raise HTTPException(status_code=400, detail="Invalid token")
 
     try:
         restaurant = db.get_restaurant_by_id(restaurant_id)
-        return restaurant.dict()
+        return restaurant
     except ValueError as e:
         # ValueError means the restaurant was not found
         raise HTTPException(status_code=404, detail=str(e))
@@ -79,3 +77,4 @@ async def update_my_restaurant(restaurant: RestaurantRegistrationInfo, token: An
     except ValueError as e:
         # ValueError means the restaurant was not found
         raise HTTPException(status_code=404, detail=str(e))
+
