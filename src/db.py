@@ -112,7 +112,7 @@ def verify_bearer(bearer: str) -> User:
     for account in accounts.values():
         if account["bearer"] == bearer:
             return User(**account)
-    raise ValueError("Invalid bearer token")
+    return None
 
 
 def get_all_restaurants():

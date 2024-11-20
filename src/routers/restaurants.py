@@ -19,30 +19,35 @@ router = APIRouter(
 
 @router.get("/", response_class=APIResponseClass)
 async def list_restaurants():
+    if db.verify_bearer() is None:
+        raise HTTPException(status_code=400, detail="Invalid token")
+
     return {"restaurants": [restaurant.dict() for restaurant in db.get_all_restaurants()]}
 
 
 @router.get("/{restaurant_id}", response_class=APIResponseClass)
-async def get_restaurant(restaurant_id: str):
+async def get_restaurant(restaurant_id: str, token: Annotated[str, Depends(oauth2_scheme)]):
+    if db.verify_bearer() is None:
+        raise HTTPException(status_code=400, detail="Invalid token")
+
     try:
         restaurant = db.get_restaurant_by_id(restaurant_id)
         return restaurant.dict()
     except ValueError as e:
+        # ValueError means the restaurant was not found
         raise HTTPException(status_code=404, detail=str(e))
-
-
-@router.post("/", response_class=APIResponseClass)
-async def create_restaurant(restaurant: Restaurant):
-    new_restaurant = db.create_restaurant(restaurant.dict())
-    return new_restaurant.dict()
 
 
 @router.delete("/{restaurant_id}", response_class=APIResponseClass)
-async def delete_restaurant(restaurant_id: str):
-    try:
-        db.delete_restaurant(restaurant_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+async def delete_restaurant(restaurant_id: str, token: Annotated[str, Depends(oauth2_scheme)]):
+    if bearer_is_admin(token):
+        try:
+            db.delete_restaurant(restaurant_id)
+        except ValueError as e:
+            # ValueError means the restaurant was not found
+            raise HTTPException(status_code=404, detail=str(e))
+    else:
+        raise HTTPException(status_code=403, detail="User is not an admin")
 
 
 @router.put("/{restaurant_id}", response_class=APIResponseClass)
@@ -52,6 +57,7 @@ async def update_restaurant(restaurant_id: str, restaurant: RestaurantRegistrati
             updated_restaurant = db.update_restaurant(restaurant_id, restaurant)
             return updated_restaurant.dict()
         except ValueError as e:
+            # ValueError means the restaurant was not found
             raise HTTPException(status_code=404, detail=str(e))
     else:
         raise HTTPException(status_code=403, detail="User is not an admin")
@@ -60,5 +66,16 @@ async def update_restaurant(restaurant_id: str, restaurant: RestaurantRegistrati
 @router.put("/me", response_class=APIResponseClass)
 async def update_my_restaurant(restaurant: RestaurantRegistrationInfo, token: Annotated[str, Depends(oauth2_scheme)]):
     user = db.verify_bearer(token)
-    updated_restaurant = db.update_restaurant(user.restaurant.id, restaurant)
-    return updated_restaurant.dict()
+
+    if user is None:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    
+    if user.restaurant is None:
+        raise HTTPException(status_code=404, detail="User does not have a restaurant")
+
+    try:
+        updated_restaurant = db.update_restaurant(user.restaurant.id, restaurant)
+        return updated_restaurant.dict()
+    except ValueError as e:
+        # ValueError means the restaurant was not found
+        raise HTTPException(status_code=404, detail=str(e))
