@@ -1,8 +1,8 @@
-from fastapi.responses import JSONResponse
 import uvicorn
-from fastapi import FastAPI, Request
-
 import db
+
+from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
 
 from models.response import APIResponse
 
@@ -13,11 +13,12 @@ app.include_router(users.router)
 app.include_router(restaurants.router)
 
 
-@app.exception_handler(ValueError)
-def value_error_handler(request: Request, e: ValueError):
+@app.exception_handler(HTTPException)
+def value_error_handler(request: Request, e: HTTPException):
+    print(f"An error occurred: {e}")
     response = APIResponse(
         ok=False,
-        error=str(e)
+        error=str(e.detail)
     )
     return JSONResponse(content=response.dict(), status_code=400)
 
